@@ -61,8 +61,8 @@ jobs:
             COMMIT_SHA=${{ steps.meta.outputs.sha }}
             BUILD_DATE=${{ steps.meta.outputs.date }}
           tags: |
-            company-api:${{ steps.meta.outputs.version }}
-            company-api:${{ steps.meta.outputs.version }}-${{ steps.meta.outputs.sha }}
+            yuval222/company-api-lab10-cicd:${{ steps.meta.outputs.version }}
+            yuval222/company-api-lab10-cicd:${{ steps.meta.outputs.version }}-${{ steps.meta.outputs.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -77,10 +77,10 @@ jobs:
             "version": "${{ needs.docker-release.outputs.version }}",
             "commitSha": "${{ needs.docker-release.outputs.sha }}",
             "buildDate": "${{ needs.docker-release.outputs.date }}",
-            "imageName": "lironefitoussi/company-api",
+            "imageName": "yuval222/company-api-lab10-cicd",
             "imageTags": [
-              "lironefitoussi/company-api:${{ needs.docker-release.outputs.version }}",
-              "lironefitoussi/company-api:${{ needs.docker-release.outputs.version }}-${{ needs.docker-release.outputs.sha }}"
+              "yuval222/company-api-lab10-cicd:${{ needs.docker-release.outputs.version }}",
+              "yuval222/company-api-lab10-cicd:${{ needs.docker-release.outputs.version }}-${{ needs.docker-release.outputs.sha }}"
             ],
             "imageDigest": "${{ needs.docker-release.outputs.digest }}",
             "runNumber": "${{ github.run_number }}"
