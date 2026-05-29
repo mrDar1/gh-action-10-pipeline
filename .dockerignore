@@ -1,0 +1,25 @@
+node_modules
+dist
+.git
+.github
+coverage
+*.log
+.env*
+
+
+# my add - check if correct:
+# Development/tooling configs (not needed at runtime)
+# test
+# .eslintrc.js
+# .prettierrc
+LAB.md
+README.md
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode
+.idea
+*.swp

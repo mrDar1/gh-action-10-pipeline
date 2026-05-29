@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+
+  docker-release:
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      sha: ${{ steps.meta.outputs.sha }}
+      date: ${{ steps.meta.outputs.date }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        id: build
+        with:
+          context: .
+          push: true
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            COMMIT_SHA=${{ steps.meta.outputs.sha }}
+            BUILD_DATE=${{ steps.meta.outputs.date }}
+          tags: |
+            company-api:${{ steps.meta.outputs.version }}
+            company-api:${{ steps.meta.outputs.version }}-${{ steps.meta.outputs.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release-artifact:
+    needs: docker-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate release.json
+        run: |
+          cat > release.json <<EOF
+          {
+            "version": "${{ needs.docker-release.outputs.version }}",
+            "commitSha": "${{ needs.docker-release.outputs.sha }}",
+            "buildDate": "${{ needs.docker-release.outputs.date }}",
+            "imageName": "lironefitoussi/company-api",
+            "imageTags": [
+              "lironefitoussi/company-api:${{ needs.docker-release.outputs.version }}",
+              "lironefitoussi/company-api:${{ needs.docker-release.outputs.version }}-${{ needs.docker-release.outputs.sha }}"
+            ],
+            "imageDigest": "${{ needs.docker-release.outputs.digest }}",
+            "runNumber": "${{ github.run_number }}"
+          }
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest
+          path: release.json
